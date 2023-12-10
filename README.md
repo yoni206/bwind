@@ -2,7 +2,7 @@
 A bit-width independence solver, which is a prototype
 implementation of the translation presented in:
 
-(https://u.cs.biu.ac.il/~zoharyo1/cade19-jar.pdf)[Towards Satisfiability Modulo Parametric Bit-vectors]
+[Towards Satisfiability Modulo Parametric Bit-vectors](https://u.cs.biu.ac.il/~zoharyo1/cade19-jar.pdf)
 
 
 ## Usage
