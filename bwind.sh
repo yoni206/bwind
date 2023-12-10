@@ -1,7 +1,7 @@
 #!/bin/bash
 
-CVC5_BIN=/home/cs/zoharyo1/pbv/cvc5-Linux-2023
-BENCHMARK="$1"
+CVC5_BIN="$1"
+BENCHMARK="$2"
 TRANSLATED_BENCHMARK="$(echo "$BENCHMARK" | tr '/' '_')"
 TRANSLATED_BENCHMARK="$TRANSLATED_BENCHMARK.bwind.smt2"
 TRANSLATED_BENCHMARK="/tmp/$TRANSLATED_BENCHMARK"
@@ -82,28 +82,43 @@ TEMPLATE="(set-logic UFNIA)
 (define-fun and_ax ((k Int)) Bool (and (and_ind_def k) (and_properties k)))
 (define-fun or_ax ((k Int)) Bool (and (or_ind_def k) (or_properties k)))
 (define-fun xor_ax ((k Int)) Bool (and (xor_ind_def k) (xor_properties k)))
-
-(declare-fun s () Int)
-(declare-fun t () Int)
-(declare-fun k () Int)
-
-(assert pow2_ax)
-(assert (and_ax k))
-(assert (<= 0 s))
-(assert (<= 0 t))
-(assert (< s (^ 2 k)))
-(assert (< t (^ 2 k)))
 "
 
 
+AXIOMS="
+; axioms
+(assert pow2_ax)
+(assert (and_ax k))
+(assert (or_ax k))
+(assert (xor_ax k))
+
+"
+
+FUN_BOUNDS=`cat $BENCHMARK | sed -n 's/(declare-fun \(\S*\).*/(assert (and (<= 0 \1) (<= \1 (pow2 k))))/p'`
+CONST_BOUNDS=`cat $BENCHMARK | sed -n 's/(declare-const \(\S*\).*/(assert (and (<= 0 \1) (<= \1 (pow2 k))))/p'`
+
 # translate
 echo "$TEMPLATE" > "$TRANSLATED_BENCHMARK"
-cat $BENCHMARK | grep -v set.logic | grep -v set.option |grep -v declare.fun | grep -v declare.const | \
+
+cat $BENCHMARK | grep -v set.logic | grep -v set.option | grep -v check.sat | grep -v "exit" | \
 # grep -v set.logic < "$BENCHMARK" | \
 # grep -v set.option < "$BENCHMARK" | \
 #   grep -v declare.fun | \
   sed -e 's/#b0000/0/g' \
       -e 's/#b0001/1/g' \
+      -e 's/#b0010/k/g' \
+      -e 's/#b1111/(intmax k)/g' \
+      -e 's/#b0111/(intmaxs k)/g' \
+      -e 's/#b1000/(intmins k)/g' \
+      -e 's/(_ bv0 k)/0/g' \
+      -e 's/(_ bv1 k)/1/g' \
+      -e 's/(_ bv4 k)/k/g' \
+      -e 's/(_ bv15 k)/(intmax k)/g' \
+      -e 's/(_ bv7 k)/(intmaxs k)/g' \
+      -e 's/(_ bv8 k)/(intmins k)/g' \
+      -e 's/(check-sat)//g' \
+      -e 's/(exit)//g' \
+      -e 's/(_ BitVec k)/Int/g' \
       -e 's/(_ bv0 k)/0/g' \
       -e 's/(_ bv1 k)/1/g' \
       -e 's/(_ bv\([0-9][0-9]*\) [0-9][0-9]*)/\1/g' \
@@ -112,12 +127,32 @@ cat $BENCHMARK | grep -v set.logic | grep -v set.option |grep -v declare.fun | g
       -e 's/(bvadd/(intadd k/g' \
       -e 's/(bvsub/(intsub k/g' \
       -e 's/(bvshl/(intshl k/g' \
+      -e 's/(bvlshr/(intlshr k/g' \
+      -e 's/(bvashr/(intashr k/g' \
       -e 's/(bvmul/(intmul k/g' \
-      -e 's/(bvand/(intmul k/g' \
+      -e 's/(bvand/(intand k/g' \
+      -e 's/(bvor/(intor k/g' \
+      -e 's/(bvxor/(intxor k/g' \
       -e 's/(bvudiv/(intudivtotal k/g' \
       -e 's/(bvurem/(intmodtotal k/g' \
       -e 's/(bvult/(</g' \
+      -e 's/(bvule/(<=/g' \
+      -e 's/(bvugt/(>/g' \
+      -e 's/(bvuge/(>=/g' \
+      -e 's/(bvslt/(intslt k/g' \
+      -e 's/(bvsgt/(intsgt k/g' \
+      -e 's/(bvsle/(intsle k/g' \
+      -e 's/(bvsge/(intsge k/g' \
       -e 's/(bvule/(<=/g' >> "$TRANSLATED_BENCHMARK"
+
+
+echo "; bounds" >> "$TRANSLATED_BENCHMARK"
+echo "$FUN_BOUNDS" >> "$TRANSLATED_BENCHMARK" 
+echo "$CONST_BOUNDS" >> "$TRANSLATED_BENCHMARK" 
+echo "$AXIOMS" >> "$TRANSLATED_BENCHMARK" 
+echo "(check-sat)" >> "$TRANSLATED_BENCHMARK" 
+
+
 
 # solve
 ${CVC5_BIN} --full-saturate-quant --nl-ext-tplanes "$TRANSLATED_BENCHMARK"
