@@ -26,8 +26,7 @@ $ ./bwind.sh ~/bin/cvc5 tests/test-pbv65.smt2
 unsat
 ```
 
-## Limitations:
-
+## Limitations and warnings:
+- This is a prototype, general support for operators is limited
 - Assumes a single bit-width, which must be named `k`.
 - In particular: no `extract` and `concat`.
-- Only supports the following constants: 0, 1, max (denoted 15 or 1111), mins (denoted 8 or 1000), and maxs (denoted 7 or 0111).
