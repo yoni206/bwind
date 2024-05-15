@@ -112,10 +112,7 @@ cat $BENCHMARK | grep -v set.logic | grep -v set.option | grep -v check.sat | gr
       -e 's/#b1000/(intmins k)/g' \
       -e 's/(_ bv0 k)/0/g' \
       -e 's/(_ bv1 k)/1/g' \
-      -e 's/(_ bv4 k)/k/g' \
-      -e 's/(_ bv15 k)/(intmax k)/g' \
-      -e 's/(_ bv7 k)/(intmaxs k)/g' \
-      -e 's/(_ bv8 k)/(intmins k)/g' \
+      -e 's/(_ bvk k)/k/g' \
       -e 's/(check-sat)//g' \
       -e 's/(exit)//g' \
       -e 's/(_ BitVec k)/Int/g' \
