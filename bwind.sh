@@ -94,8 +94,9 @@ AXIOMS="
 
 "
 
-FUN_BOUNDS=`cat $BENCHMARK | sed -n 's/(declare-fun \(\S*\).*/(assert (and (<= 0 \1) (<= \1 (pow2 k))))/p'`
-CONST_BOUNDS=`cat $BENCHMARK | sed -n 's/(declare-const \(\S*\).*/(assert (and (<= 0 \1) (<= \1 (pow2 k))))/p'`
+
+FUN_BOUNDS=`cat $BENCHMARK   | sed -n 's/(declare-fun \(\S*\).*/(assert (and (<= 0 \1) (< \1 (pow2 k))))/p'`
+CONST_BOUNDS=`cat $BENCHMARK | sed -n 's/(declare-const \(\S*\).*/(assert (and (<= 0 \1) (< \1 (pow2 k))))/p'`
 
 # translate
 echo "$TEMPLATE" > "$TRANSLATED_BENCHMARK"
@@ -144,9 +145,10 @@ cat $BENCHMARK | grep -v set.logic | grep -v set.option | grep -v check.sat | gr
 
 
 echo "; bounds" >> "$TRANSLATED_BENCHMARK"
-echo "$FUN_BOUNDS" >> "$TRANSLATED_BENCHMARK" 
-echo "$CONST_BOUNDS" >> "$TRANSLATED_BENCHMARK" 
+echo "$FUN_BOUNDS" |grep -v 0.k.....k..pow2.k >> "$TRANSLATED_BENCHMARK" 
+echo "$CONST_BOUNDS" |grep -v 0.k.....k..pow2.k  >> "$TRANSLATED_BENCHMARK" 
 echo "$AXIOMS" >> "$TRANSLATED_BENCHMARK" 
+echo "(assert (> k 0))" >> "$TRANSLATED_BENCHMARK" 
 echo "(check-sat)" >> "$TRANSLATED_BENCHMARK" 
 
 
